@@ -1,5 +1,6 @@
 
-pam_telegram_2fa.o:
+
+pam_telegram_2fa.o: pam_telegram_2fa.c
 	gcc -fPIC -lcurl -fno-stack-protector -c pam_telegram_2fa.c
 
 install: pam_telegram_2fa.o
