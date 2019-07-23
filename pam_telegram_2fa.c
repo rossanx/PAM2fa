@@ -2,7 +2,7 @@
  * Author: rossano at gmail dot com
  * This file is part of the PAM-telegram-2fa distribution 
  * (https://gitlab.com/rossanx/pam-2fa.git or 
- *  https://github.com/rossanx/pam-2fa.git).
+ *  https://github.com/rossanx/pam2fa.git).
  * Copyright (c) Rossano Pablo Pinto, 2019.
  * 
  * This program is free software: you can redistribute it and/or modify  
