@@ -5,6 +5,23 @@ Two Factor Authentication - PAM + Telegram !!
 This project provides two factor authentication to linux systems that use PAM. A code is sent to
 Telegram, which must be typed at the login prompt to validate the login process.
 
+################################################################################################
+0 - Installation
+################################################################################################
+
+To install:
+
+   make
+   make install
+
+To uninstall:
+
+   make uninstall
+
+################################################################################################
+1 - Module Configuration
+################################################################################################
+
 This module provides only the authentication service. It must be configured using file
 /etc/pam.d/system-auth in archlinux systems. Find the appropriate config file in your Linux
 distribution.
@@ -81,10 +98,12 @@ of auth realm (it works as a seconde line either...). The module parameters are:
       registered safe code. Inform the number of safe codes that can be used. The value 0 
       disables the use of safe codes.
 
+################################################################################################
+2 - User configuration file
+################################################################################################
 
-
-According to the example, the user must create the file ~/.pam_telegram_2fa/credentials with
-the following content:
+According to the example at section 1, the user must create the file
+~/.pam_telegram_2fa/credentials with the following content:
 
 id=<YOUR CHAR ID>
 botkey=<YOUR BOT KEY>
@@ -100,6 +119,9 @@ in the user configurable file).  In order to enable this, the administrator must
 module parameter enable_safe_codes. The provided example enables 3 safe codes for each user.
 The user can choose any 5 digit number as a safe code.
 
+################################################################################################
+3 - Miscellaneous
+################################################################################################
 
 If you want to use SSH to access a machine with this module you must set
 ChallengeResponseAuthentication to yes at file /etc/ssh/sshd_config.
