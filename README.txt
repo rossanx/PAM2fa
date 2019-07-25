@@ -53,7 +53,7 @@ The contents of /etc/pam.d/system-auth must be similar to:
 	session   optional  pam_permit.so
 
 Observe that you only need to configure the auth realm. Basically, It must be the first line
-of auth realm (it works as a seconde line either...). The module parameters are:
+of auth realm (it works as a second line either...). The module parameters are:
 
 
    dir=	    	       	  
