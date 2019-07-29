@@ -22,7 +22,7 @@ To uninstall:
 1 - Module Configuration
 ################################################################################################
 
-This module provides only the authentication service. It must be configured using file
+This module provides only the auth and session realms. It must be configured using file
 /etc/pam.d/system-auth in archlinux systems. Find the appropriate config file in your Linux
 distribution.
 
@@ -50,10 +50,11 @@ The contents of /etc/pam.d/system-auth must be similar to:
 
 	session   required  pam_limits.so
 	session   required  pam_unix.so
+	session	  required  pam_telegram_2fa.so
 	session   optional  pam_permit.so
 
-Observe that you only need to configure the auth realm. Basically, It must be the first line
-of auth realm (it works as a second line either...). The module parameters are:
+Observe that you only need to configure the auth and session realms. Basically, this module must
+come right before or after pam_unix.so. The module parameters for the auth realm are:
 
 
    dir=	    	       	  
@@ -98,6 +99,8 @@ of auth realm (it works as a second line either...). The module parameters are:
       registered safe code. Inform the number of safe codes that can be used. The value 0 
       disables the use of safe codes.
 
+You don't need parameters for the session realm.
+
 ################################################################################################
 2 - User configuration file
 ################################################################################################
@@ -117,7 +120,8 @@ safe_code=<FIVE DIGIT NUMBER>
 In the case the Internet is not available, the user can provide safe codes (parameter safe_code
 in the user configurable file).  In order to enable this, the administrator must provide the
 module parameter enable_safe_codes. The provided example enables 3 safe codes for each user.
-The user can choose any 5 digit number as a safe code.
+The user can choose any 5 digit number as a safe code. After a succesful login with a safe code,
+the corresponding entry at the user configuration file will be marked as used.
 
 ################################################################################################
 3 - Miscellaneous

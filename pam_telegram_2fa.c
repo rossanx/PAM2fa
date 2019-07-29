@@ -16,6 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License 
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * ----
  */
  
 
@@ -31,6 +32,7 @@
  *    - User provided safe codes in case Internet is not available. ALMOST DONE !!!!
  *    - Delete code after user typed it (send message to chatbot to delete it).
  *      https://core.telegram.org/method/messages/.deleteMessages
+ *
  */
 
 
@@ -288,7 +290,8 @@ int parse_module_params(int argc,
  * READ USER CONFIGURATION FILE 
  */
 int read_user_configuration_file(const char * uname, 
-				 char * dname, 
+				 char * dname,
+				 char * path,
 				 char * id, 
 				 char * bkey, 
 				 char * p_uname,
@@ -296,13 +299,18 @@ int read_user_configuration_file(const char * uname,
 				 int nsc,
 				 char safe_codes[MAX_SAFE_CODES][MAX_CODE_LENGTH+1]) 
 {
-	char path[512];
+	//char path[512];
 	char cred[CRED_BUF_SIZE];
 	struct passwd *pwd;
 	pwd = getpwnam(uname);
-	snprintf(path, 512, "%s/%s/credentials",pwd->pw_dir,dname);
+	if (path == NULL)
+		path = (char *) malloc(512);
 	
+	snprintf(path, 512, "%s/%s/credentials",pwd->pw_dir,dname);
 
+
+	
+	
 	FILE *fdx;
 	fdx=fopen(path, "r");
 
@@ -551,20 +559,98 @@ int send_code(char * chatid,
 	return 0;	
 }
 
+/*
+ * REMOVE SAFE_CODE ENTRY WHEN USED
+ */
+
+int update_safe_code_entry(char * filename)
+{
+	
+	char cred[CRED_BUF_SIZE];
+	char newcred[CRED_BUF_SIZE];
+	
+	FILE *fdx;
+	fdx=fopen(filename, "r+");
+	
+	if (fdx == NULL)
+		return -1;
+
+	int counter=0;
+	while(1) {
+		cred[counter++] = fgetc(fdx);
+		if ( feof(fdx) || counter >= CRED_BUF_SIZE)
+			break;
+	};
+
+	
+	/* 
+	 * PARSE ITEMS 
+	 */
+	char *line;
+	char *token;
+	char *sp1, *sp2;
+	char linebkp[1024];
+	int found=0;
 
 
+	linebkp[0] = '\0';
+	newcred[0] = '\0';
+
+		
+	/* 
+	 * READ LINE BY LINE 
+	 */
+	line=strtok_r(cred, "\n", &sp1);
+	while ( line != NULL && strlen(line) > 1) {
+	  strcpy(linebkp,line);
+	  
+	  token = strtok_r(line, "=", &sp2);
+	  if (strcmp(token,"safe_code") == 0 && found == 0) {
+	    token = strtok_r(NULL, "=", &sp2);
+	    strcat(newcred, "#safe_code=");
+	    strcat(newcred, token);
+	    strcat(newcred, "\n");
+	    found=1;
+	  } else {
+	    strcat(newcred, linebkp);
+	    strcat(newcred, "\n");
+	  }
+	  line=strtok_r(NULL, "\n", &sp1);
+
+	}
+	newcred[counter]='\0';
+	
+	int ret=0;
+	ret = fseek(fdx, 0L, SEEK_SET);
+	ret = fputs(newcred, fdx);
+	
+	fclose(fdx);
+	return 0;
+}
+
+
+
+
+
+/*
+ * Authentication realm
+ */
 
 PAM_EXTERN int pam_sm_setcred( pam_handle_t *pamh, int flags, int argc, const char **argv ) 
 {
 	return PAM_SUCCESS;
 }
 
+/*
+ * Authentication realm
+ */
 
 PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, const char **argv ) 
 {
 	int rval;
 	const char* username;
 
+	
 	/* 
 	 * MODULE PARAMETERS 
 	 */
@@ -590,7 +676,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	 */
 	char* code;
 	unsigned long timestamp;
-
+	char * user_conf_file_path = (char *) malloc(512);
 
 	/* 
 	 * PAM VARIABLES 
@@ -641,7 +727,8 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	 * READ USER CONFIGURATION FILE 
 	 */
 	rval = read_user_configuration_file(username, 
-					    dir, 
+					    dir,
+					    user_conf_file_path,
 					    chatid, 
 					    botkey, 
 					    proxy_username,
@@ -649,6 +736,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 					    enable_safe_codes,
 					    safe_codes); 
 
+	
 	/* 
 	 * IF read_user_configuration RETURNED -1, 
 	 * DISABLE TWO FACTOR AUTHENTICATION 
@@ -700,19 +788,38 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	 */
 	if (resp) {
 
+		
+		
 		/*
 		 * ASK FOR SAFE CODE WHEN NEEDED
 		 */
-		if (do_i_need_a_safe_code)
-			sent_code=atoi(safe_codes[0]); // TODO: remove this fixed index thing
-
+		if (do_i_need_a_safe_code) {
+			if (safe_codes[0] != NULL)
+				sent_code=atoi(safe_codes[0]); /* Always get the first entry.
+								* When a code is used, it's commented
+								* out, so it's not going to be read 
+								* again.
+								*/ 
+		}
+		
 		code = resp[0].resp;
 		resp[0].resp = NULL;
+
+
 		if (atoi(code) == sent_code) {
 			/*
 			 * WRITE CODE CACHE IF SUCESSFUL
 			 */
 			write_cache(dir,username,timestamp);
+
+			/*
+			 * PASSING PARAMETER FROM AUTH REALM TO SESSION REALM
+			 */
+			if (do_i_need_a_safe_code) {
+				//rval = pam_set_data(pamh, "pam_2fa_code", (void *) code, NULL);
+				rval = pam_set_data(pamh, "pam_2fa_user_conf_filename", (void *) user_conf_file_path, NULL);
+			}
+			
 			return PAM_SUCCESS;
 		}
 		else {
@@ -725,3 +832,41 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 
 	return PAM_AUTH_ERR;
 }
+
+/*
+ * Session realm
+ */
+
+PAM_EXTERN int pam_sm_open_session( pam_handle_t *pamh, int flags, int argc, const char **argv )
+{
+
+	
+	FILE *fdx;
+	char *user;
+	int retval;
+	//char path[512];
+	char *filename=NULL;
+	
+	retval = pam_get_item(pamh, PAM_USER, (void *) &user);
+
+	if (retval == PAM_SUCCESS || user != NULL || *user != '\0') {
+		retval = pam_get_data(pamh, "pam_2fa_user_conf_filename", (const void **) &filename);
+		if (retval != PAM_NO_MODULE_DATA) {
+			update_safe_code_entry(filename);
+		}
+	}
+	
+	if (filename != NULL)
+		free(filename); // IT was allocated at pam_sm_authenticate
+
+	return PAM_SUCCESS;
+}
+
+PAM_EXTERN int pam_sm_close_session (pam_handle_t *pamh, int flags, int argc, const char ** argv)
+{
+	return PAM_SUCCESS;
+}
+
+
+
+
