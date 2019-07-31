@@ -29,7 +29,6 @@
 
 /*
  * TODO:
- *    - User provided safe codes in case Internet is not available. ALMOST DONE !!!!
  *    - Delete code after user typed it (send message to chatbot to delete it).
  *      https://core.telegram.org/method/messages/.deleteMessages
  *
@@ -677,7 +676,8 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	char* code;
 	unsigned long timestamp;
 	char * user_conf_file_path = (char *) malloc(512);
-
+	char zebulon_not_used_tracking_01=0;
+		
 	/* 
 	 * PAM VARIABLES 
 	 */
