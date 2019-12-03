@@ -6,7 +6,33 @@ This project provides two factor authentication to linux systems that use PAM. A
 Telegram, which must be typed at the login prompt to validate the login process.
 
 ################################################################################################
-0 - Installation
+0 - Create BOT at Telegram
+################################################################################################
+
+You will need two pieces of information: your ID and a BOTID.
+
+First, create a bot at telegram. To do so, 
+
+   0.1 - Login to your telegram account
+   0.2 - Go to Chats and find BotFather
+   0.3 - Open a chat with BotFather
+   0.4 - Type /newbot and follow the instructions
+   0.5 - Take note of the token to access the bot via HTTP API. 
+         YOU WILL USE IT AT THE USER CONFIGURATION FILE (botkey=...)
+
+Second, 
+
+   0.6 - Find the bot userinfobot
+   0.7 - Open a char with userinfobot
+   0.8 - Type /start
+   0.9 - Take note of your Id number
+         YOU WILL USE IT AT THE USER CONFIGURATION FILE (id=...)
+         
+
+Now you have the two pieces of information to be used at 3 (User configuration file) below.
+
+################################################################################################
+1 - Installation
 ################################################################################################
 
 To install:
@@ -19,7 +45,7 @@ To uninstall:
    make uninstall
 
 ################################################################################################
-1 - Module Configuration
+2 - Module Configuration
 ################################################################################################
 
 This module provides only the auth and session realms. It must be configured using file
@@ -102,7 +128,7 @@ come right before or after pam_unix.so. The module parameters for the auth realm
 You don't need parameters for the session realm.
 
 ################################################################################################
-2 - User configuration file
+3 - User configuration file
 ################################################################################################
 
 According to the example at section 1, the user must create the file
@@ -124,7 +150,7 @@ The user can choose any 5 digit number as a safe code. After a succesful login w
 the corresponding entry at the user configuration file will be marked as used.
 
 ################################################################################################
-3 - Miscellaneous
+4 - Miscellaneous
 ################################################################################################
 
 If you want to use SSH to access a machine with this module you must set
