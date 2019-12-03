@@ -108,7 +108,7 @@ You don't need parameters for the session realm.
 According to the example at section 1, the user must create the file
 ~/.pam_telegram_2fa/credentials with the following content:
 
-id=<YOUR CHAR ID>
+id=<YOUR CHAT ID>
 botkey=<YOUR BOT KEY>
 proxy_username=<YOUR PROXY USERNAME>
 proxy_password=<YOUR PROXY PASSWORD>
