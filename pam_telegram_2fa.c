@@ -147,15 +147,15 @@ int collect_information(pam_handle_t *pamh, const char * message, int msg_style,
 /*
  * AUTHENTICATES USER TO ACCESS THE INTERNET 
  * - Ex.: Captive portal (I'll call it proxy)
- * 
+ *
  * It's possible to provide the credentials using a user provided file with the following
  * content:
  *
- *      proxy_username=<username> 
+ *      proxy_username=<username>
  *      proxy_password=<password>
  *
  * The provided file must be the same file used to inform telegram chatid and botkey.
- *  
+ *
  * If the user provides the file but only parameter USERNAME, PAM will ask for the
  * password.
  *
@@ -182,14 +182,14 @@ int internet_access_authentication(char url[1024],
 
 	if (p_user_name == NULL || strcmp(p_user_name,"!") == 0) {
 		collect_information(pamh, "PROXY USER: ", PAM_PROMPT_ECHO_ON, proxy_username);
-		
+
 	} else {
 		strncpy(proxy_username, p_user_name, MAX_PROVIDED_INFORMATION_SIZE);
 	}
 
 
 	if (p_pwd == NULL || strcmp(p_pwd,"!") == 0) {
-		proxy_password=(char *) malloc(MAX_PROVIDED_INFORMATION_SIZE);		
+		proxy_password=(char *) malloc(MAX_PROVIDED_INFORMATION_SIZE);
 		collect_information(pamh, "PROXY PASSWORD: ", PAM_PROMPT_ECHO_OFF, proxy_password);
 	} else {
 		proxy_password=(char *) malloc(MAX_PROVIDED_INFORMATION_SIZE);
@@ -218,65 +218,63 @@ int internet_access_authentication(char url[1024],
 		curl_easy_cleanup(curl);
 	}
 	curl_global_cleanup();
-	
+
 	return 0;
 
 }
 
 
-/* 
+/*
  * PARSE MODULE PARAMS
  */
-int parse_module_params(int argc, 
-			const char ** argv, 
-			char * fname, 
-			char * p_url, 
-			char * p_post_string, 
+int parse_module_params(int argc,
+			const char ** argv,
+			char * fname,
+			char * p_url,
+			char * p_post_string,
 			int *cache_timeout,
-			int *enable_safe_codes) 
+			int *enable_safe_codes)
 {
 	char *line;
 	char *token;
 	char param[MAX_PARAM_SIZE];
 
-	fname[0]='\0';
-	p_url[0]='\0';
-	p_post_string[0]='\0';
+	fname[0]='!';
+	fname[1]='\0';
+	p_url[0]='!';
+	p_url[1]='\0';
+	p_post_string[0]='!';
+	p_post_string[1]='\0';
 
 	for (int i=0; i<argc; i++) {
 		strncpy(param, argv[i], MAX_PARAM_SIZE); // bkp
 
 		line=strtok((char *) argv[i], "=");
 
-		if (strcmp(line,"dir") == 0) {			
+		if (strcmp(line,"dir") == 0) {
 			line = strtok(NULL, "=");
 			strcpy(fname, line);
-			
 		}
-		else if (strcmp(line,"proxy_url") == 0) {			
+		else if (strcmp(line,"proxy_url") == 0) {
 			line = strtok(NULL, "=");
 			strcpy(p_url, line);
-			
 		}
 		else if (strcmp(line,"proxy_post_string") == 0) {
 			int size=strlen(param);
 			int j=0;
-			for (j=0; j<size; j++)
+			for (; j<size; j++)
 				p_post_string[j]=param[j+18];
 			p_post_string[j]='\0';
-			
 		}
 		else if (strcmp(line, "cache_timeout") == 0) {
 			line = strtok(NULL, "=");
 			*cache_timeout = atoi(line);
-			
 		}
 		else if (strcmp(line, "enable_safe_codes") == 0) {
 			line = strtok(NULL, "=");
 			*enable_safe_codes = atoi(line);
 			if (*enable_safe_codes > MAX_SAFE_CODES)
 				*enable_safe_codes = MAX_SAFE_CODES;
-			
 		}
 	}
 
@@ -286,17 +284,17 @@ int parse_module_params(int argc,
 
 
 /*
- * READ USER CONFIGURATION FILE 
+ * READ USER CONFIGURATION FILE
  */
-int read_user_configuration_file(const char * uname, 
+int read_user_configuration_file(const char * uname,
 				 char * dname,
 				 char * path,
-				 char * id, 
-				 char * bkey, 
+				 char * id,
+				 char * bkey,
 				 char * p_uname,
 				 char * p_pwd,
 				 int nsc,
-				 char safe_codes[MAX_SAFE_CODES][MAX_CODE_LENGTH+1]) 
+				 char safe_codes[MAX_SAFE_CODES][MAX_CODE_LENGTH+1])
 {
 	//char path[512];
 	char cred[CRED_BUF_SIZE];
@@ -304,17 +302,15 @@ int read_user_configuration_file(const char * uname,
 	pwd = getpwnam(uname);
 	if (path == NULL)
 		path = (char *) malloc(512);
-	
+
 	snprintf(path, 512, "%s/%s/credentials",pwd->pw_dir,dname);
 
 
-	
-	
 	FILE *fdx;
 	fdx=fopen(path, "r");
 
-	/* 
-	 * IF FILE NOT PRESENT, DISABLE TWO FACTOR AUTHENTICATION 
+	/*
+	 * IF FILE NOT PRESENT, DISABLE TWO FACTOR AUTHENTICATION
 	 *
 	 *      - e.g.: ~/.pam_telegram_2fa/credentials
 	 */
@@ -329,8 +325,8 @@ int read_user_configuration_file(const char * uname,
 	};
 
 
-	/* 
-	 * PARSE ITEMS 
+	/*
+	 * PARSE ITEMS
 	 */
 	char *line;
 	int i=0;
@@ -338,20 +334,20 @@ int read_user_configuration_file(const char * uname,
 	char *sp1, *sp2;
 	int index_safe_codes=0;
 
-	/* 
-	 * READ LINE BY LINE 
+	/*
+	 * READ LINE BY LINE
 	 */
 	line=strtok_r(cred, "\n", &sp1);
 	while ( line != NULL) {
-		/* 
-		 * READ FIELD BY FIELD 
+		/*
+		 * READ FIELD BY FIELD
 		 */
 		token = strtok_r(line, "=", &sp2);
-		if (strcmp(token,"id") == 0) {			
+		if (strcmp(token,"id") == 0) {
 			token = strtok_r(NULL, "=", &sp2);
 			strncpy(id, token, MAX_TELEGRAM_ID_LEN);
 		}
-		else if (strcmp(token,"botkey") == 0) {			
+		else if (strcmp(token,"botkey") == 0) {
 			token = strtok_r(NULL, "=", &sp2);
 			strncpy(bkey, token, MAX_TELEGRAM_BOTKEY_LEN);
 		}
@@ -364,14 +360,12 @@ int read_user_configuration_file(const char * uname,
 			token = strtok_r(NULL, "=", &sp2);
 			strncpy(p_pwd, token, MAX_PROVIDED_INFORMATION_SIZE);
 			trim_string(p_pwd);
-							
 		}
 		else if (strcmp(token,"safe_code") == 0) {
 			token = strtok_r(NULL, "=", &sp2);
 			strncpy(safe_codes[index_safe_codes], token, MAX_CODE_LENGTH);
 			trim_string(safe_codes[index_safe_codes]);
 			++index_safe_codes;
-							
 		}
 		line=strtok_r(NULL, "\n", &sp1);
 	}
@@ -472,13 +466,14 @@ int write_cache(char * dname, const char * uname, unsigned long timestamp)
  * RETURNS
  *  0 - Everything OK
  * -1 - Error
+ * -2 - No proxy URL OR POST STRING
  */
-int send_code(char * chatid, 
-	      char * botkey, 
-	      int *code, 
-	      char proxy_url[1024], 
-	      char proxy_post_string[MAX_POST_SIZE], 
-	      char *proxy_username, 
+int send_code(char * chatid,
+	      char * botkey,
+	      int *code,
+	      char proxy_url[1024],
+	      char proxy_post_string[MAX_POST_SIZE],
+	      char *proxy_username,
 	      char *proxy_password,
 	      pam_handle_t *pamh)
 {
@@ -489,8 +484,8 @@ int send_code(char * chatid,
 #endif
 
 
-	/* 
-	 * GENERATE CODE 
+	/*
+	 * GENERATE CODE
 	 */
 	int exponent = MAX_CODE_LENGTH;
 	int base=10;
@@ -503,21 +498,21 @@ int send_code(char * chatid,
 
 	time_t _t;
 	srand((unsigned) time(&_t));
-	int temp_code = rand() % divisor; 
+	int temp_code = rand() % divisor;
 
-	/* 
+	/*
 	 * RETURN CODE TO CALLER - THE CALLER USES IT TO VERIFY IF USER PROVIDED THE RIGHT CODE 
 	 */
-	*code = temp_code; 
+	*code = temp_code;
 
-	/* 
-	 * SEND CODE 
+	/*
+	 * SEND CODE
 	 */
 	char url[1024] = "";
 	char __post[MAX_POST_SIZE] = "";
-	snprintf(url,1024,TELEGRAM_URL,botkey); 
+	snprintf(url,1024,TELEGRAM_URL,botkey);
 	snprintf(__post,MAX_POST_SIZE,TELEGRAM_POST, chatid, temp_code);
-	
+
 	CURL *curl;
 	CURLcode response;
 
@@ -526,7 +521,7 @@ int send_code(char * chatid,
 	int npass=0;
 
  try_again:
-	
+
 	curl_global_init(CURL_GLOBAL_ALL);
 	curl = curl_easy_init();
 	if (curl) {
@@ -535,10 +530,12 @@ int send_code(char * chatid,
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fake_curl_write);
 		response = curl_easy_perform(curl);
 		if (response != CURLE_OK) {
+			if (strcmp(proxy_url,"!")==0 || strcmp(proxy_post_string,"!")==0)
+				return -2;
 			curl_easy_cleanup(curl);
 			/*
 			 * TRY TO AUTHENTICATE
-			 */ 
+			 */
 			int rval = internet_access_authentication(proxy_url, proxy_post_string, proxy_username, proxy_password, pamh);
 			if (rval != 0) {
 				return -1;
@@ -555,7 +552,7 @@ int send_code(char * chatid,
 	}
 	curl_global_cleanup();
 
-	return 0;	
+	return 0;
 }
 
 /*
@@ -564,7 +561,7 @@ int send_code(char * chatid,
 
 int update_safe_code_entry(char * filename)
 {
-	
+
 	char cred[CRED_BUF_SIZE];
 	char newcred[CRED_BUF_SIZE];
 	
@@ -618,11 +615,11 @@ int update_safe_code_entry(char * filename)
 
 	}
 	newcred[counter]='\0';
-	
+
 	int ret=0;
 	ret = fseek(fdx, 0L, SEEK_SET);
 	ret = fputs(newcred, fdx);
-	
+
 	fclose(fdx);
 	return 0;
 }
@@ -649,19 +646,19 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	int rval;
 	const char* username;
 
-	
-	/* 
-	 * MODULE PARAMETERS 
+
+	/*
+	 * MODULE PARAMETERS
 	 */
 	char dir[256];
-	char proxy_url[512];
-	char proxy_post_string[512];
+	char proxy_url[512]="!";
+	char proxy_post_string[512]="!";
 	int cache_timeout=0;
 	int enable_safe_codes=0;
 
 
-	/* 
-	 * USER PROVIDED INFO 
+	/*
+	 * USER PROVIDED INFO
 	 */
 	char proxy_username[MAX_PROVIDED_INFORMATION_SIZE]="!";
 	char proxy_password[MAX_PROVIDED_INFORMATION_SIZE]="!";
@@ -670,25 +667,25 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	char safe_codes[MAX_SAFE_CODES][MAX_CODE_LENGTH+1]; /* +1 to hold '\0' */
 
 
-	/* 
-	 * AUXILIARY VARS 
+	/*
+	 * AUXILIARY VARS
 	 */
 	char* code;
 	unsigned long timestamp;
 	char * user_conf_file_path = (char *) malloc(512);
 	char zebulon_not_used_tracking_01=0;
-		
-	/* 
-	 * PAM VARIABLES 
+
+	/*
+	 * PAM VARIABLES
 	 */
-	struct pam_response *resp;	
+	struct pam_response *resp;
 	struct pam_conv *conv;
 	struct pam_message msg[1], *pmsg[1];
 	pmsg[0] = &msg[0];
 	msg[0].msg_style = PAM_PROMPT_ECHO_ON;
 	msg[0].msg = "CODE: ";
 
-		
+
 	/*  PARSE MODULE PARAMS
 	 *
 	 *     proxy_url=
@@ -710,36 +707,36 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 
 
 	rval = pam_get_user(pamh, &username, "Username: ");
-	
+
 	if (rval != PAM_SUCCESS) {
 		return rval;
 	}
 
 
-	/* 
+	/*
 	 * DO NOT SEND CODE FOR ROOT USER - AT LEAST FOR NOW - WE DON'T WANT TO LOCK ROOT OUT 
 	 */
 	if (strcmp("root",username) == 0)
 		return PAM_SUCCESS;
 
 
-	/* 
-	 * READ USER CONFIGURATION FILE 
+	/*
+	 * READ USER CONFIGURATION FILE
 	 */
-	rval = read_user_configuration_file(username, 
+	rval = read_user_configuration_file(username,
 					    dir,
 					    user_conf_file_path,
-					    chatid, 
-					    botkey, 
+					    chatid,
+					    botkey,
 					    proxy_username,
 					    proxy_password,
 					    enable_safe_codes,
-					    safe_codes); 
+					    safe_codes);
 
-	
-	/* 
-	 * IF read_user_configuration RETURNED -1, 
-	 * DISABLE TWO FACTOR AUTHENTICATION 
+
+	/*
+	 * IF read_user_configuration RETURNED -1,
+	 * DISABLE TWO FACTOR AUTHENTICATION
 	 */
 	if (rval == -1) {
 		return PAM_SUCCESS;
@@ -752,8 +749,8 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	int sent_code;
 	int do_i_need_a_safe_code=0;
 	if (check_cache(dir, username, cache_timeout, &timestamp) != 2) {
-		/* 
-		 * IF NOT, GENERATE AND SEND CODE TO TELEGRAM 
+		/*
+		 * IF NOT, GENERATE AND SEND CODE TO TELEGRAM
 		 */
 		rval = send_code(chatid,
 				 botkey,
@@ -773,23 +770,23 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 	}
 	else {
 		return PAM_SUCCESS;
-	}	
+	}
 
-	/* 
-	 * ASK USER TO TYPE THE RECEIVED CODE 
+	/*
+	 * ASK USER TO TYPE THE RECEIVED CODE
 	 */
 	rval = pam_get_item(pamh, PAM_CONV, (const void **) &conv);
 	if ( rval == PAM_SUCCESS) {
 		rval = conv->conv(1, (const struct pam_message **)pmsg, &resp, conv->appdata_ptr);
 	}
 
-	/* 
-	 * CHECK IF USER TYPED THE CORRECT CODE 
+	/*
+	 * CHECK IF USER TYPED THE CORRECT CODE
 	 */
 	if (resp) {
 
-		
-		
+
+
 		/*
 		 * ASK FOR SAFE CODE WHEN NEEDED
 		 */
@@ -801,7 +798,7 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 								* again.
 								*/ 
 		}
-		
+
 		code = resp[0].resp;
 		resp[0].resp = NULL;
 
@@ -819,11 +816,11 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 				//rval = pam_set_data(pamh, "pam_2fa_code", (void *) code, NULL);
 				rval = pam_set_data(pamh, "pam_2fa_user_conf_filename", (void *) user_conf_file_path, NULL);
 			}
-			
+
 			return PAM_SUCCESS;
 		}
 		else {
-			return PAM_AUTH_ERR;	
+			return PAM_AUTH_ERR;
 		}
 	}
 	else {
@@ -840,13 +837,13 @@ PAM_EXTERN int pam_sm_authenticate( pam_handle_t *pamh, int flags,int argc, cons
 PAM_EXTERN int pam_sm_open_session( pam_handle_t *pamh, int flags, int argc, const char **argv )
 {
 
-	
+
 	FILE *fdx;
 	char *user;
 	int retval;
 	//char path[512];
 	char *filename=NULL;
-	
+
 	retval = pam_get_item(pamh, PAM_USER, (void *) &user);
 
 	if (retval == PAM_SUCCESS || user != NULL || *user != '\0') {
@@ -855,7 +852,7 @@ PAM_EXTERN int pam_sm_open_session( pam_handle_t *pamh, int flags, int argc, con
 			update_safe_code_entry(filename);
 		}
 	}
-	
+
 	if (filename != NULL)
 		free(filename); // IT was allocated at pam_sm_authenticate
 
