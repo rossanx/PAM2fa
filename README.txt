@@ -131,6 +131,9 @@ You don't need parameters for the session realm.
 3 - User configuration file
 ################################################################################################
 
+IMPORTANT: Don't use this module for root accounts, you can be locked out. Also, this module 
+           simply ignores the configuration for the root user (and can even cause problems).
+
 According to the example at section 1, the user must create the file
 ~/.pam_telegram_2fa/credentials with the following content:
 
